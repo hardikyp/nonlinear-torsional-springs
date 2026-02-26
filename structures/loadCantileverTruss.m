@@ -13,26 +13,25 @@
 
 function [params] = loadCantileverTruss()
 links = [1, 2;
-         1, 4;
-         2, 3;
+         1, 3;
+         2, 4;
          3, 4];
 
-springs = [2, 3, 4];
-del=0.01;
+springs = [1, 2, 4];
 coords = [0, 0;
-          0, 1;
-          0.5-del, 0.5-del;
-          1, 0];
+          0.5043, 0.4956;
+          1, 0;
+          0.9999, 1];
 
 restraint = [1, 1;
-             1, 1;
              0, 0;
+             1, 1;
              0, 0];
 
 force = [0, 0;
          0, 0;
          0, 0;
-         0, 1000];
+         -400, 0];
 
 A = [0.5; 
      0.5;
@@ -48,7 +47,7 @@ E = [3000000;
 L0 = L;
 theta0 = theta;
 
-kT = [50];
+kT = [10];
 alpha0 = springInfo(coords, springs);
 
 [nNodes, nDof] = size(restraint);

@@ -36,11 +36,11 @@ function [axialForce, intF] = barForceRec(coords, coordsPrev, E, A, L, L0, ...
     T = transformationMatrix(theta);
     dULocal = T * dU(ismember(reshapeIdx, map), 1);
 
-    % Axial force from bar's natural deformations
+    % Incremental axial force from bar's natural deformations
     natDef = [-1, 0, 1, 0] * dULocal;
     axialForce = E * A / L0 * natDef;
 
-    % Internal nodal forces
+    % Incremental internal nodal forces
     kLocal = barStiffness(E, A, L);
     kGeom = geomStiffness(barF, L);
     fLocal = (kLocal + kGeom) * dULocal;

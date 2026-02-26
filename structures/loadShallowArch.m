@@ -18,15 +18,15 @@ links = [1, 2;
 springs = [1, 2, 3];
 
 coords = [0, 0;
-          4, -3;
-          8, 0];
+          1*cosd(10), -1*sind(10);
+          2*cosd(10), 0];
 
 restraint = [1, 1;
              0, 0;
              1, 1];
 
 force = [0, 0;
-         0, 200000;
+         0, 10000;
          0, 0];
 
 A = [0.5; 
@@ -39,7 +39,7 @@ E = [3000000;
 L0 = L;
 theta0 = theta;
 
-kT = [100000];
+kT = [1000];
 alpha0 = springInfo(coords, springs);
 
 [nNodes, nDof] = size(restraint);

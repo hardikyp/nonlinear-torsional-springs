@@ -82,10 +82,10 @@ elseif simType == 2
     [results] = eulerSolver(inputStructure);
 elseif simType == 3
     disp("Running elastic second order analysis using load-controlled algorithm (Newton-Raphson)...");
-    [results] = loadControlSolver(inputStructure);    
+    [results] = solverLCM(inputStructure);    
 elseif simType == 4
     disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
-    [results] = dispControlSolver(inputStructure);
+    [results] = solverDCM(inputStructure);
 end
 
 % Visualize the results of structural analysis
