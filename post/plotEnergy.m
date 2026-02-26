@@ -39,7 +39,10 @@ for inc = 2:(numSteps + 1)
     dU = U(:, inc) - U(:, inc - 1);
     
     % Spring strain energy
-    springEnergy(1, inc) = 0.5 * kT' * (alpha(:, inc) - alpha0).^2; 
+    % springEnergy(1, inc) = 0.5 * kT' * (alpha(:, inc) - alpha0).^2; 
+    alpha1 = deg2rad(30); alpha2 = deg2rad(330);
+    Us_i = enrichedSpringEnergy(kT, alpha(:,inc), alpha0, alpha1, alpha2);
+    springEnergy(1, inc) = sum(Us_i);
 
     % Bar strain energy    
     barAvgE = (barIntForce(:, inc) + barIntForce(:, inc - 1))';

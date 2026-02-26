@@ -3,8 +3,9 @@
 This repository revolves around MATLAB implementations of axial bar elements coupled with three-node torsional springs (3NTS). The same set of arrays, scalars, and structs flows through the structure loaders (`structures/`), solvers (`solver/`), stiffness assembly (`core/`), and plotting/validation scripts (`post/`, `validate*.m`). Tables below summarize the variables by responsibility; sizes assume the default 2D truss case where each node has two DOFs (`nDof = 2`).
 
 ## Execution-time selectors & I/O structs
+
 | Variable | Type / Size | Where used | Description |
-|---|---|---|---|
+| --- | --- | --- | --- |
 | `structType` | scalar double | `main.m` | Menu choice (0–5) indicating which predefined structure loader to call. |
 | `inputStructure` | struct | `main.m`, solvers | Encapsulates geometry, material data, connectivity, and precomputed indexing. Each `load*.m` function populates the fields listed in later tables. |
 | `inputStructureName` | string | `main.m`, `plotStructure` | Short tag for naming videos and figures (e.g., `"VertCol"`). |
@@ -12,8 +13,9 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `results` / `outParams` | struct | solvers, `post/` | Solver output that contains the original `params` plus histories (`delta`, `P`, `nodeLoc`, energies, etc.). |
 
 ## Geometry, connectivity & material properties (loader outputs)
+
 | Variable | Type / Size | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `links` | `nBars × 2` double | Node IDs for each axial bar (`[node_i, node_j]`). |
 | `springs` | `nSpr × 3` double | Three-node torsional spring connectivity (`[n1, n2, n3]`, with `n2` being the joint). |
 | `coords` | `nNodes × 2` double | Initial nodal coordinates `[x, y]`. |
@@ -28,8 +30,9 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `nNodes`, `nBars`, `nSpr`, `nDof` | scalar double | Problem sizes; default `nDof = 2`. |
 
 ## Indexing & assembly helpers
+
 | Variable | Type / Size | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `totalDof` | scalar (`nNodes * nDof`) | Total number of structural DOFs. Not stored explicitly but implied throughout. |
 | `identity` | `nNodes × nDof` double | Maps each nodal DOF to its position in the permuted global ordering (free DOFs first). Produced by `numberDOF`. |
 | `nFree` | scalar | Number of free DOFs (count of zeros in `restraint`). |
@@ -38,8 +41,9 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `mapSprings` | `nSpr × (3*nDof)` | DOF indices for each spring (three nodes). |
 
 ## Global matrices, forces & displacements
+
 | Variable | Type / Size | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `kSystem` | `totalDof × totalDof` double | Assembled tangent stiffness from bars (`barStiffness` + `geomStiffness`) and springs (`springStiffness`). |
 | `Kff`, `Ksf` | matrices | Free–free and restrained–free partitions of `kSystem` returned by `partitionStiffness`. |
 | `kLocal` | `4 × 4` double | Local axial bar stiffness from `barStiffness`. |
@@ -57,8 +61,9 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `numSteps` | scalar | Number of increments actually executed; used by plotting utilities to loop over histories. |
 
 ## Nonlinear solver bookkeeping
+
 | Variable | Type / Size | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `maxIncr` | scalar | Target number of load/displacement increments (100 for Euler and load-control, 700 or `1/loadFactor` for arc-length, 1 for linear analyses). |
 | `maxIter`, `minIter` | scalars | Iteration caps/minimums inside Newton or arc-length loops. |
 | `autoLoadStep`, `loadFactor` | scalars | User input for arc-length solver; selects adaptive vs fixed load-step scheme. |
@@ -71,8 +76,9 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `dirSign` | scalar (+1/-1) | Tracks whether the method is following or reversing the previous displacement path when sign changes occur. |
 
 ## Element-level helper quantities
+
 | Variable | Type / Size | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `D` | `nBars × 2` double | Vector differences `coords(j,:) - coords(i,:)` used by `barInfo`. |
 | `dU`, `dULocal` | vectors | Incremental displacements in global and local bar frames. |
 | `natDef` | scalar | Natural (axial) deformation of a bar (`[-1 0 1 0] * dULocal`). |
@@ -84,8 +90,9 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `M` | scalar | Spring moment (`kT * (alpha - alpha0)`). |
 
 ## Energy & plotting helpers
+
 | Variable | Type / Size | Meaning |
-|---|---|---|
+| --- | --- | --- |
 | `externalWork` | row vector | Cumulative work from global loads: trapezoidal integration of `P` vs `delta`. |
 | `springEnergy` | row vector | `0.5 * kT .* (alpha - alpha0).^2` per increment. |
 | `barEnergy` | row vector | Work done by bar internal forces (`barIntForce`) over incremental displacements. |
@@ -96,9 +103,6 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 ## Enriched spring stiffness relationships
 
 We model each hinge/joint with an angle $\alpha$ wrapped to [0, 2$\pi$) and use an enriched piecewise rotational spring law instead of a purely linear spring. In the mid-range ($\alpha_1 \le \alpha \le \alpha_2$), the response is linear ($M = K_T(\alpha-\alpha_0)$), while near the limits (0 and 2$\pi$) the moment and tangent stiffness follow $\tan/\sec^2$ branches that grow rapidly. This creates a smooth numerical barrier: stiffness tends to infinity as $\alpha \to 0$ or $\alpha \to 2\pi$, which discourages panel/joint over-rotation and local self-penetration without adding explicit contact constraints. In the element formulation, internal force is $F_\text{int}=M(\alpha)\nabla\alpha$ and tangent stiffness is $K=(dM/d\alpha)\nabla\alpha\nabla\alpha^\top + M(\alpha)\nabla^2\alpha$.
-
-The following modifications to the springs constitutive relationship help us model stiffening of the spring as its relative angle $\alpha$ tends to 0 or $2\pi$. Contrary to the default linear relationship, the following equations help us model the spring piece-wise linear and nonlinearly. As the relative angle 
-
 $$
 M(\alpha)=
 \begin{cases}
