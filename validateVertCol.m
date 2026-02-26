@@ -21,13 +21,13 @@ inputStructureName = "VertCol";
 
 % Run displacement controlled analysis
 disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
-[results] = solverDCM(inputStructure);
+[results] = solverALCM(inputStructure);
 
 % Visualize the results of structural analysis
 % plotStructure(results, inputStructureName);
 
 % Plot internal vs external energy
-% plotEnergy(results);
+plotEnergy(results);
 
 % Plot force vs displacement curve(s) with analytical solution
 plotForceDisp(results, [1]);

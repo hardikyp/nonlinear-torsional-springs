@@ -39,10 +39,11 @@ alpha = mod(atan2(S, C) + 2 * pi, 2 * pi);
 J = gradientAlpha(a, b, N, L1, L2);
 H = hessianAlpha(a, b, N, L1, L2);
 
-% Internal force
-M = kT * (alpha - alpha0);
-intF = M * J;
+% Spring stiffening behaviour near spring's limit points
+alpha1 = deg2rad(30); alpha2 = deg2rad(330);
+[kT, M] = enrichedSpringLaw(kT, alpha, alpha0, alpha1, alpha2);
 
-% Spring stiffness matrix
+% Internal force vector and spring stiffness matrix
+intF = M * J;
 kSpring = kT * (J * J') + M * H;
 end

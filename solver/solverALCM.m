@@ -47,7 +47,7 @@ mapSprings = params.mapSprings;
 PRef = loadVector(force, reshapeIdx);
 
 % Initilize simulation parameters
-maxIncr = 1000;
+maxIncr = 3500;
 maxIter = 50;
 minIter = 3;
 eta = 1;
@@ -84,12 +84,12 @@ for i = 1:maxIncr
 
     while (err > errTol || j <= minIter) && (j <= maxIter)
         % Generate stiffness matrix
-        [kSystem, intF, axialF] = globalStiffnessNL(coords, coordsPrev, ...
-                                                    springs, nDof, nBars, ...
-                                                    nNodes, nSpr, A, E, L, ...
-                                                    L0, theta, kT, alpha0, ... 
-                                                    reshapeIdx, mapBars, ...
-                                                    mapSprings, axialF, i);
+        [kSystem, intF, axialF] = globalStiffness(coords, coordsPrev, ...
+                                                  springs, nDof, nBars, ...
+                                                  nNodes, nSpr, A, E, L, ...
+                                                  L0, theta, kT, alpha0, ... 
+                                                  reshapeIdx, mapBars, ...
+                                                  mapSprings, axialF, i);
         [Kff, Ksf] = partitionStiffness(kSystem, nFree);
 
         % Update internal member forces based on dDelta applied
@@ -99,7 +99,7 @@ for i = 1:maxIncr
 
         % Residual calculation
         if j > 1
-            R = P(1:nFree, i + 1) - intForce(1:nFree, 1);
+            R = P(1:nFree, i + 1) - intForce(1:nFree, i + 1);
         end
         dUR(:, j, i) = Kff \ R;
         dUP(:, j, i) = Kff \ PRef(1:nFree);

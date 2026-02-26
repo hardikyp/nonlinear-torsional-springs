@@ -93,7 +93,41 @@ This repository revolves around MATLAB implementations of axial bar elements cou
 | `barThickness`, `triSize` | scalars | Derived plot dimensions based on mean bar length, used by the drawing utilities. |
 | `videoFile`, `v` | string / `VideoWriter` | Output path and writer handle used by `plotStructure` to export `.mp4` animations. |
 
+## Enriched spring stiffness relationships
+
+We model each hinge/joint with an angle $\alpha$ wrapped to [0, 2$\pi$) and use an enriched piecewise rotational spring law instead of a purely linear spring. In the mid-range ($\alpha_1 \le \alpha \le \alpha_2$), the response is linear ($M = K_T(\alpha-\alpha_0)$), while near the limits (0 and 2$\pi$) the moment and tangent stiffness follow $\tan/\sec^2$ branches that grow rapidly. This creates a smooth numerical barrier: stiffness tends to infinity as $\alpha \to 0$ or $\alpha \to 2\pi$, which discourages panel/joint over-rotation and local self-penetration without adding explicit contact constraints. In the element formulation, internal force is $F_\text{int}=M(\alpha)\nabla\alpha$ and tangent stiffness is $K=(dM/d\alpha)\nabla\alpha\nabla\alpha^\top + M(\alpha)\nabla^2\alpha$.
+
+The following modifications to the springs constitutive relationship help us model stiffening of the spring as its relative angle $\alpha$ tends to 0 or $2\pi$. Contrary to the default linear relationship, the following equations help us model the spring piece-wise linear and nonlinearly. As the relative angle 
+
+$$
+M(\alpha)=
+\begin{cases}
+K_T(\alpha_1-\alpha_0)+\left(\dfrac{2K_T\alpha_1}{\pi}\right)
+\tan\!\left(\dfrac{\pi(\alpha-\alpha_1)}{2\alpha_1}\right),
+& 0<\alpha<\alpha_1,\\[8pt]
+K_T(\alpha-\alpha_0),
+& \alpha_1\le\alpha\le\alpha_2,\\[8pt]
+K_T(\alpha_2-\alpha_0)+\left(\dfrac{2K_T(2\pi-\alpha_2)}{\pi}\right)
+\tan\!\left(\dfrac{\pi(\alpha-\alpha_2)}{4\pi-2\alpha_2}\right),
+& \alpha_2<\alpha<2\pi.
+\end{cases}
+$$
+$$
+K(\alpha)=
+\begin{cases}
+K_T\,
+\sec^{2}\!\left(\dfrac{\pi(\alpha-\alpha_1)}{2\alpha_1}\right),
+& 0<\alpha<\alpha_1,\\[8pt]
+K_T,
+& \alpha_1\le\alpha\le\alpha_2,\\[8pt]
+K_T\,
+\sec^{2}\!\left(\dfrac{\pi(\alpha-\alpha_2)}{4\pi-2\alpha_2}\right),
+& \alpha_2<\alpha<2\pi.
+\end{cases}
+$$
+
 ### Notes
+
 - MATLAB stores indices as doubles; whenever you see integer-like arrays (`links`, `mapBars`, etc.) they are still `double` but only used as indices.
 - All solvers keep free DOFs first in every vector/matrix; use `reshapeIdx` whenever converting to/from nodal layouts to avoid mixing restrained DOFs.
 - `numSteps` equals `maxIncr` for fixed-step solvers; in adaptive arc-length runs, it reflects however many increments actually converged before the loop ended.
