@@ -35,22 +35,9 @@ C = dot(a, b);
 S = a' * N * b;
 alpha = mod(atan2(S, C) + 2 * pi, 2 * pi);
 
-% Jacobian
-J11 = N * a / L1^2;
-J21 = N * b / L2^2 - N * a / L1^2;
-J31 = -N * b / L2^2;
-J = [J11; J21; J31];
-
-% Hessian
-H11 = (1 / L1^2) * N - (2 / L1^4) * (N * a) * a';
-H12 = - H11;
-H13 = zeros(2, 2);
-H23 = (1 / L2^2) * N - (2 / L2^4) * (N * b) * b';
-H33 = - H23;
-H22 = H11 + H33;
-H = [H11,  H12,  H13;
-     H12', H22,  H23;
-     H13', H23', H33];
+% Gradient and hessian of alpha
+J = gradientAlpha(a, b, N, L1, L2);
+H = hessianAlpha(a, b, N, L1, L2);
 
 % Internal force
 M = kT * (alpha - alpha0);
