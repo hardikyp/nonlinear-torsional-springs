@@ -47,7 +47,7 @@ mapSprings = params.mapSprings;
 PRef = loadVector(force, reshapeIdx);
 
 % Initilize simulation parameters
-maxIncr = 3500;
+maxIncr = 4500;
 maxIter = 50;
 minIter = 3;
 eta = 1;

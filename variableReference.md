@@ -1,137 +1,163 @@
 # Simulation Variables Reference
 
-This repository revolves around MATLAB implementations of axial bar elements coupled with three-node torsional springs (3NTS). The same set of arrays, scalars, and structs flows through the structure loaders (`structures/`), solvers (`solver/`), stiffness assembly (`core/`), and plotting/validation scripts (`post/`, `validate*.m`). Tables below summarize the variables by responsibility; sizes assume the default 2D truss case where each node has two DOFs (`nDof = 2`).
+This file documents the variables currently used in the repository's active MATLAB workflow (`structures/`, `core/`, `solver/`, `post/`, and driver scripts).
 
-## Execution-time selectors & I/O structs
+Unless noted otherwise, the model is 2D and each node has two translational DOFs (`nDof = 2`).
 
-| Variable | Type / Size | Where used | Description |
-| --- | --- | --- | --- |
-| `structType` | scalar double | `main.m` | Menu choice (0–5) indicating which predefined structure loader to call. |
-| `inputStructure` | struct | `main.m`, solvers | Encapsulates geometry, material data, connectivity, and precomputed indexing. Each `load*.m` function populates the fields listed in later tables. |
-| `inputStructureName` | string | `main.m`, `plotStructure` | Short tag for naming videos and figures (e.g., `"VertCol"`). |
-| `simType` | scalar double | `main.m` | Menu choice (0–4) selecting the solver (eigenvalue, first-order, Euler, load control, displacement control). |
-| `results` / `outParams` | struct | solvers, `post/` | Solver output that contains the original `params` plus histories (`delta`, `P`, `nodeLoc`, energies, etc.). |
+## Runtime selectors and top-level structs
 
-## Geometry, connectivity & material properties (loader outputs)
+| Variable | Type / Size | Where used | Meaning |
+|---|---|---|---|
+| `structType` | scalar | `main.m` | Menu choice for structure selection. |
+| `simType` | scalar | `main.m` | Menu choice for solver selection. |
+| `inputStructure` | struct | `main.m`, `test*.m`, `validate*.m` | Standardized structure/analysis input returned by `load*.m`. |
+| `inputStructureName` | string | `main.m`, test/validate scripts | Label used in output file names. |
+| `params` | struct | all solvers and post functions | Canonical input container. |
+| `results` / `outParams` | struct | solver outputs, post functions | Input fields plus histories (loads, displacements, internal forces, nodal states). |
 
-| Variable | Type / Size | Meaning |
-| --- | --- | --- |
-| `links` | `nBars × 2` double | Node IDs for each axial bar (`[node_i, node_j]`). |
-| `springs` | `nSpr × 3` double | Three-node torsional spring connectivity (`[n1, n2, n3]`, with `n2` being the joint). |
-| `coords` | `nNodes × 2` double | Initial nodal coordinates `[x, y]`. |
-| `restraint` | `nNodes × nDof` logical/double | Boundary conditions (`1` fixed, `0` free) per DOF. |
-| `force` | `nNodes × nDof` double | Prescribed nodal load components in global axes. |
-| `A`, `E` | `nBars × 1` double | Cross-sectional areas and Young’s moduli for each bar. |
-| `kT` | `nSpr × 1` double | Rotational stiffness of each 3NTS element. |
-| `L`, `theta` | `nBars × 1` double | Current bar lengths and orientations returned by `barInfo`. Initialized to undeformed state. |
-| `L0`, `theta0` | `nBars × 1` double | Reference (original) lengths and angles. |
-| `alpha0` | `nSpr × 1` double | Rest angles between bar pairs for each spring (`springInfo`). |
-| `alpha` | `nSpr × (maxIncr+1)` double | Spring rotation history updated in `dispControlSolver` for energy checks. |
-| `nNodes`, `nBars`, `nSpr`, `nDof` | scalar double | Problem sizes; default `nDof = 2`. |
-
-## Indexing & assembly helpers
+## Loader outputs (`structures/load*.m`)
 
 | Variable | Type / Size | Meaning |
-| --- | --- | --- |
-| `totalDof` | scalar (`nNodes * nDof`) | Total number of structural DOFs. Not stored explicitly but implied throughout. |
-| `identity` | `nNodes × nDof` double | Maps each nodal DOF to its position in the permuted global ordering (free DOFs first). Produced by `numberDOF`. |
-| `nFree` | scalar | Number of free DOFs (count of zeros in `restraint`). |
-| `reshapeIdx` | `totalDof × 1` double | Flattened permutation vector used to reshape between `[node, dof]` ordering and solver ordering. |
-| `mapBars` | `nBars × (2*nDof)` | DOF indices for each bar (two nodes). Used when assembling bar contributions. |
-| `mapSprings` | `nSpr × (3*nDof)` | DOF indices for each spring (three nodes). |
+|---|---|---|
+| `links` | `nBars x 2` | Bar connectivity (`[node_i, node_j]`). |
+| `springs` | `nSpr x 3` | 3NTS connectivity (`[n1, n2, n3]`, center node is `n2`). |
+| `coords` | `nNodes x 2` | Initial nodal coordinates `[x, y]`. |
+| `restraint` | `nNodes x nDof` | Fixity map (`1` fixed, `0` free). |
+| `force` | `nNodes x nDof` | Applied nodal loads in global components. |
+| `A` | `nBars x 1` | Bar cross-sectional area. |
+| `E` | `nBars x 1` | Bar Young's modulus. |
+| `L`, `theta` | `nBars x 1` | Current bar length and orientation (`barInfo`). |
+| `L0`, `theta0` | `nBars x 1` | Reference bar length and orientation. |
+| `kT` | `nSpr x 1` | Base rotational spring stiffness (`k0` in enriched law). |
+| `alpha0` | `nSpr x 1` | Reference spring angles (`springInfo`). |
+| `nNodes`, `nDof`, `nBars`, `nSpr` | scalar | Problem dimensions. |
+| `identity` | `nNodes x nDof` | Global DOF numbering with free DOFs first. |
+| `nFree` | scalar | Number of free DOFs. |
+| `reshapeIdx` | `(nNodes*nDof) x 1` | Permutation index for flattening/restoring nodal arrays. |
+| `mapBars` | `nBars x (2*nDof)` | Global DOF map for each bar. |
+| `mapSprings` | `nSpr x (3*nDof)` | Global DOF map for each spring. |
 
-## Global matrices, forces & displacements
-
-| Variable | Type / Size | Meaning |
-| --- | --- | --- |
-| `kSystem` | `totalDof × totalDof` double | Assembled tangent stiffness from bars (`barStiffness` + `geomStiffness`) and springs (`springStiffness`). |
-| `Kff`, `Ksf` | matrices | Free–free and restrained–free partitions of `kSystem` returned by `partitionStiffness`. |
-| `kLocal` | `4 × 4` double | Local axial bar stiffness from `barStiffness`. |
-| `kGeom` | `4 × 4` double | Geometric stiffness derived from current axial force (`geomStiffness`). |
-| `kSpring` | `6 × 6` double | Local torsional spring stiffness assembled inside `springStiffness`. |
-| `T` | `4 × 4` double | Direction cosine matrix from `transformationMatrix`. |
-| `Pref` | `totalDof × 1` double | Full load vector assembled from `force` via `loadVector`. Scaled to form incremental loads. |
-| `P`, `dP` | `totalDof × (maxIncr+1)` and `totalDof × maxIncr` | Total and incremental load histories. In nonlinear solvers `dP` also stores reactions for restrained DOFs. |
-| `delta`, `dDelta` | `totalDof × (maxIncr+1)` and `totalDof × maxIter × maxIncr` | Total and incremental displacement histories. |
-| `nodeLoc` | `nNodes × nDof × (maxIncr+1)` | Nodal coordinates after each increment (`coords` + reshaped `delta`). |
-| `nodeForce` | `nNodes × nDof × (maxIncr+1)` | Reaction + applied forces converted back to nodal ordering for plotting. |
-| `barIntForce`, `sprIntForce` | `totalDof × (maxIncr+1)` | Accumulated internal nodal forces caused by bars and springs, tracked for residual calculations and energy plots. |
-| `intF` | `totalDof × 2` double | Column 1 = new bar contribution, column 2 = spring contribution, from `globalStiffnessNL`. |
-| `axialF` | `nBars × (maxIncr+1)` | Axial force history per bar; feeds `geomStiffness` and energy routines. |
-| `numSteps` | scalar | Number of increments actually executed; used by plotting utilities to loop over histories. |
-
-## Nonlinear solver bookkeeping
+## DOF mapping and assembly helpers (`core/`)
 
 | Variable | Type / Size | Meaning |
-| --- | --- | --- |
-| `maxIncr` | scalar | Target number of load/displacement increments (100 for Euler and load-control, 700 or `1/loadFactor` for arc-length, 1 for linear analyses). |
-| `maxIter`, `minIter` | scalars | Iteration caps/minimums inside Newton or arc-length loops. |
-| `autoLoadStep`, `loadFactor` | scalars | User input for arc-length solver; selects adaptive vs fixed load-step scheme. |
-| `lambda` | `maxIter × maxIncr` double | Load-scaling factors used in nonlinear solvers (per iteration for arc-length, per increment for load-control). |
-| `R` | `nFree × 1` double | Residual force vector (`external - internal`) for Newton iterations. |
-| `err`, `errTol` | scalars | Current residual/displacement norm and associated stopping tolerance. |
-| `coordsPrev` | `nNodes × 2` | Last converged coordinates; needed for incremental strain evaluation in `barForceRec`. |
-| `dDeltaSD`, `dDeltaDD`, `dDeltaSD11` | vectors | Secant, dynamic, and reference displacement directions used by the arc-length algorithm to compute `lambda`. |
-| `S` | `maxIncr × 1` double | Scaling history that relates first-step and subsequent secant directions for automatic load stepping. |
-| `dirSign` | scalar (+1/-1) | Tracks whether the method is following or reversing the previous displacement path when sign changes occur. |
+|---|---|---|
+| `restraint` (vectorized) | `(nNodes*nDof) x 1` | Flattened fixity used in `numberDOF`. |
+| `free_idx`, `rest_idx` | index vectors | Free/fixed DOF index sets. |
+| `pSystem` | `(nNodes*nDof) x 1` | Global load vector from `loadVector`. |
+| `Kff` | `nFree x nFree` | Free-free stiffness block (`partitionStiffness`). |
+| `Ksf` | `(nFix) x nFree` | Restrained-free stiffness block (`partitionStiffness`). |
+| `kSystem` | `(nNodes*nDof) x (nNodes*nDof)` | Assembled tangent stiffness matrix (`globalStiffness`). |
+| `intF` | `(nNodes*nDof) x 2` | Current-iteration internal force contributions: column 1 bars, column 2 springs. |
+| `axialF` | `nBars x (maxIncr+1)` | Running axial-force history used in geometric stiffness update. |
 
-## Element-level helper quantities
+## Bar element variables (`core/bar*.m`, `core/geomStiffness.m`, `core/transformationMatrix.m`)
 
 | Variable | Type / Size | Meaning |
-| --- | --- | --- |
-| `D` | `nBars × 2` double | Vector differences `coords(j,:) - coords(i,:)` used by `barInfo`. |
-| `dU`, `dULocal` | vectors | Incremental displacements in global and local bar frames. |
-| `natDef` | scalar | Natural (axial) deformation of a bar (`[-1 0 1 0] * dULocal`). |
-| `r1`, `r2`, `r3` | `2 × 1` vectors | Node position vectors for a spring. |
-| `a`, `b` | `2 × 1` vectors | Bar direction vectors entering/leaving the middle node of a spring. |
-| `N` | `2 × 2` constant | Skew-symmetric matrix `[0 -1; 1 0]` used to rotate vectors by +90°. |
-| `J` | `6 × 2` stacked blocks | Jacobian relating nodal displacements to spring rotation change. |
-| `H` | `6 × 6` | Hessian of the spring rotation w.r.t. nodal coordinates (needed for consistent stiffness). |
-| `M` | scalar | Spring moment (`kT * (alpha - alpha0)`). |
+|---|---|---|
+| `D` | `nBars x 2` | Bar direction vectors (`coords(j,:) - coords(i,:)`). |
+| `kLocal` | `4 x 4` | Local axial bar stiffness matrix. |
+| `kGeom` | `4 x 4` | Geometric stiffness matrix from axial force. |
+| `T` | `4 x 4` | Transformation matrix between local/global bar coordinates. |
+| `dU` | `(nNodes*nDof) x 1` | Incremental nodal displacement between `coordsPrev` and `coords` in one iteration. |
+| `dULocal` | `4 x 1` | Element displacement increment in local bar frame. |
+| `natDef` | scalar | Axial natural deformation (`[-1 0 1 0] * dULocal`). |
+| `barF` | scalar | Axial force state from previous iteration/increment used for `kGeom`. |
+| `axialForce` | scalar | New axial force increment from `barForceRec`. |
+| `fLocal` | `4 x 1` | Local element nodal force increment. |
 
-## Energy & plotting helpers
+## Spring geometry and constitutive variables (`core/spring*.m`, `core/gradientAlpha.m`, `core/hessianAlpha.m`, `core/enrichedSpringLaw.m`)
 
 | Variable | Type / Size | Meaning |
-| --- | --- | --- |
-| `externalWork` | row vector | Cumulative work from global loads: trapezoidal integration of `P` vs `delta`. |
-| `springEnergy` | row vector | `0.5 * kT .* (alpha - alpha0).^2` per increment. |
-| `barEnergy` | row vector | Work done by bar internal forces (`barIntForce`) over incremental displacements. |
-| `energyDiff` | row vector | Absolute difference between `externalWork` and total internal energy, plotted to check conservation. |
-| `barThickness`, `triSize` | scalars | Derived plot dimensions based on mean bar length, used by the drawing utilities. |
-| `videoFile`, `v` | string / `VideoWriter` | Output path and writer handle used by `plotStructure` to export `.mp4` animations. |
+|---|---|---|
+| `r1`, `r2`, `r3` | `2 x 1` | Coordinates of the three nodes in one 3NTS element. |
+| `a`, `b` | `2 x 1` | Vectors from center spring node to side nodes. |
+| `L1`, `L2` | scalar | Norms of `a` and `b`. |
+| `N` | `2 x 2` | 90-degree CCW rotation matrix `[0 -1; 1 0]`. |
+| `C`, `S` | scalar | Dot and pseudo-cross terms used in angle evaluation. |
+| `alpha` | scalar / `nSpr x 1` | Wrapped relative spring angle in `[0, 2*pi)`. |
+| `J` | `6 x 1` | Gradient of `alpha` wrt spring nodal coordinates (`gradientAlpha`). |
+| `H` | `6 x 6` | Hessian of `alpha` (`hessianAlpha`). |
+| `alpha1`, `alpha2` | scalar | Transition angles for enriched spring law (currently `45 deg` and `315 deg` in `springStiffness`). |
+| `k0` | scalar | Base spring stiffness parameter (input to enriched law). |
+| `xi` | scalar | Branch-local transformed angle used in `tan`/`sec^2` branches. |
+| `M` | scalar | Spring moment from enriched law. |
+| `kT` (local) | scalar | Tangent spring stiffness returned by enriched law at current `alpha`. |
+| `kSpring` | `6 x 6` | Consistent spring tangent matrix: `kT*(J*J') + M*H`. |
+| `sprIntF` | `6 x 1` | Spring internal force contribution mapped into global vector. |
 
-## Enriched spring stiffness relationships
+## Enriched spring energy variables (`core/enrichedSpringEnergy.m`)
 
-We model each hinge/joint with an angle $\alpha$ wrapped to [0, 2$\pi$) and use an enriched piecewise rotational spring law instead of a purely linear spring. In the mid-range ($\alpha_1 \le \alpha \le \alpha_2$), the response is linear ($M = K_T(\alpha-\alpha_0)$), while near the limits (0 and 2$\pi$) the moment and tangent stiffness follow $\tan/\sec^2$ branches that grow rapidly. This creates a smooth numerical barrier: stiffness tends to infinity as $\alpha \to 0$ or $\alpha \to 2\pi$, which discourages panel/joint over-rotation and local self-penetration without adding explicit contact constraints. In the element formulation, internal force is $F_\text{int}=M(\alpha)\nabla\alpha$ and tangent stiffness is $K=(dM/d\alpha)\nabla\alpha\nabla\alpha^\top + M(\alpha)\nabla^2\alpha$.
-$$
-M(\alpha)=
-\begin{cases}
-K_T(\alpha_1-\alpha_0)+\left(\dfrac{2K_T\alpha_1}{\pi}\right)
-\tan\!\left(\dfrac{\pi(\alpha-\alpha_1)}{2\alpha_1}\right),
-& 0<\alpha<\alpha_1,\\[8pt]
-K_T(\alpha-\alpha_0),
-& \alpha_1\le\alpha\le\alpha_2,\\[8pt]
-K_T(\alpha_2-\alpha_0)+\left(\dfrac{2K_T(2\pi-\alpha_2)}{\pi}\right)
-\tan\!\left(\dfrac{\pi(\alpha-\alpha_2)}{4\pi-2\alpha_2}\right),
-& \alpha_2<\alpha<2\pi.
-\end{cases}
-$$
-$$
-K(\alpha)=
-\begin{cases}
-K_T\,
-\sec^{2}\!\left(\dfrac{\pi(\alpha-\alpha_1)}{2\alpha_1}\right),
-& 0<\alpha<\alpha_1,\\[8pt]
-K_T,
-& \alpha_1\le\alpha\le\alpha_2,\\[8pt]
-K_T\,
-\sec^{2}\!\left(\dfrac{\pi(\alpha-\alpha_2)}{4\pi-2\alpha_2}\right),
-& \alpha_2<\alpha<2\pi.
-\end{cases}
-$$
+| Variable | Type / Size | Meaning |
+|---|---|---|
+| `Es` | vector (`nSpr x 1`) | Strain energy per spring at current angle. |
+| `L`, `M`, `R` | logical masks | Region masks for left barrier, linear region, right barrier. |
+| `pl`, `pr` | vectors | Region scaling coefficients (`pi/alpha1`, `pi/(2*pi-alpha2)`). |
 
-### Notes
+## Nonlinear solver state variables (`solver/*.m`)
 
-- MATLAB stores indices as doubles; whenever you see integer-like arrays (`links`, `mapBars`, etc.) they are still `double` but only used as indices.
-- All solvers keep free DOFs first in every vector/matrix; use `reshapeIdx` whenever converting to/from nodal layouts to avoid mixing restrained DOFs.
-- `numSteps` equals `maxIncr` for fixed-step solvers; in adaptive arc-length runs, it reflects however many increments actually converged before the loop ended.
+| Variable | Type / Size | Meaning |
+|---|---|---|
+| `PRef` | `(nNodes*nDof) x 1` | Reference global load vector from prescribed nodal loads. |
+| `maxIncr` | scalar | Maximum increments (load/displacement steps). |
+| `maxIter`, `minIter` | scalar | Corrector iteration limits per increment. |
+| `errTol`, `err` | scalar | Convergence tolerance and current normalized error. |
+| `i`, `j` | scalar | Increment and iteration counters. |
+| `R` | `nFree x 1` | Residual force on free DOFs (`external - internal`). |
+| `lambda` | `maxIter x maxIncr` | Load-scaling parameters per iteration and increment. |
+| `dU` | `(nNodes*nDof) x maxIter x maxIncr` | Incremental displacement corrections. |
+| `dUR` | `nFree x maxIter x maxIncr` | Residual-driven displacement component (`Kff\\R`). |
+| `dUP` | `nFree x maxIter x maxIncr` | Load-pattern displacement component (`Kff\\PRef`). |
+| `U` | `(nNodes*nDof) x (maxIncr+1)` | Total displacement history in solver DOF ordering. |
+| `dP` | `(nNodes*nDof) x maxIter x maxIncr` | Incremental load/reaction history. |
+| `P` | `(nNodes*nDof) x (maxIncr+1)` | Total load/reaction history. |
+| `alpha` | `nSpr x (maxIncr+1)` | Spring angle history. |
+| `barIntForce`, `sprIntForce` | `(nNodes*nDof) x (maxIncr+1)` | Running internal force histories. |
+| `intForce` | `(nNodes*nDof) x (maxIncr+1)` | Total internal force history (`bar + spring`). |
+| `coordsPrev` | `nNodes x 2` | Previous-iteration coordinates for incremental force recovery. |
+| `nodeLoc` | `nNodes x nDof x (maxIncr+1)` | Nodal positions per increment. |
+| `nodeForce` | `nNodes x nDof x (maxIncr+1)` | Nodal loads/reactions per increment. |
+| `numSteps` | scalar | Stored as `maxIncr` in output struct for plotting loops. |
+
+## Solver-specific control variables
+
+| Variable | Solver(s) | Meaning |
+|---|---|---|
+| `eta` | `solverALCM` | Arc-length scaling parameter in denominator term. |
+| `arcLength` | `solverALCM` | Arc-length radius used for predictor step. |
+| `dirSign` | `solverALCM`, `solverGDCM`, `solverAL_GDCM`, `solverDCM` | Sign flag to follow/reverse equilibrium path direction. |
+| `loadFactor` | `solverLCM`, `solverGDCM`, `solverAL_GDCM` | Fixed step factor (or seed factor for adaptive updates). |
+| `GSP` | `solverGDCM` | Generalized stiffness parameter history for adaptive scaling. |
+| `gamma` | `solverAL_GDCM` | Exponent for auto-step scaling using `CSP`. |
+| `CSP` | `solverAL_GDCM` | Current stiffness parameter history. |
+| `autoLoadStep` | `solverAL_GDCM` | User choice for fixed vs automatic load stepping. |
+| `ctrlUIdx` | `solverDCM` signature | Intended control DOF index for displacement control input (currently not used internally). |
+
+## Post-processing variables (`post/`)
+
+| Variable | Type / Size | Meaning |
+|---|---|---|
+| `externalWork` | `1 x (numSteps+1)` | Cumulative external work by trapezoidal integration of `P` over `U`. |
+| `springEnergy` | `1 x (numSteps+1)` | Sum of per-spring energies from `enrichedSpringEnergy`. |
+| `barEnergy` | `1 x (numSteps+1)` | Incremental bar internal work accumulation. |
+| `internalWork` | `1 x (numSteps+1)` | Total internal energy (`barEnergy + springEnergy`). |
+| `energyDiff` | `1 x (numSteps+1)` | Absolute mismatch between external and internal energy. |
+| `relativeError` | scalar (%) | Max relative energy-balance error. |
+| `barThickness` | scalar | Visualization scale proportional to mean undeformed bar length. |
+| `triSize` | scalar | Support symbol size in rendering. |
+| `videoFile` | string | Output path for deformation video. |
+| `v` | `VideoWriter` | Video writer handle. |
+| `dofList` | vector | Optional free-DOF list to plot in `plotForceDisp`. |
+
+## Output struct fields expected by plotting functions
+
+`plotStructure`, `plotForceDisp`, and `plotEnergy` require these fields in solver output:
+
+- Geometry/state: `links`, `springs`, `restraint`, `force`, `L0`, `nodeLoc`, `nodeForce`, `numSteps`
+- Response histories: `U`, `P`, `alpha`, `alpha0`, `kT`, `barIntForce`
+- Metadata: `nFree`, `identity`
+
+## Notes
+
+- Arrays used as indices (`links`, `springs`, `mapBars`, `mapSprings`, `identity`) are MATLAB `double` values but logically integer IDs.
+- Free DOFs are always ordered first in global vectors/matrices.
+- In active nonlinear solvers, displacement history is stored in `U` (not `delta`).

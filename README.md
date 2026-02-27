@@ -1,85 +1,108 @@
 # Three-Node Torsional Spring (3NTS) Structural Analysis Toolkit
 
-This repository contains the MATLAB implementation referenced in the technical note below. The toolkit augments classical 2D axial bar formulations with the 3NTS element, letting you assign rotational stiffness to pin-jointed trusses without introducing rotational DOFs. The codebase assembles the mixed bar/spring system, runs linear and nonlinear solvers, and exports visualizations that highlight large-displacement behavior in reconfigurable bar-linked structures.
+This repository contains a MATLAB framework for 2D bar-linkage structural analysis with three-node torsional springs (3NTS). The implementation combines axial bar elements, geometric nonlinearity, and an enriched rotational spring law that stiffens near angle limits.
 
-## Abstract
+## What the code does
 
-“This technical note presents the derivation, validation, and application of a *three-node torsional spring (3NTS)* element for the analysis of bar-linked, reconfigurable structures. The 3NTS element assigns rotational stiffness to a joint  (node) of two axial force members (bars) in truss-like assemblies. This element avoids the use of rotational degrees of freedom by recasting its resisting moment into equivalent nodal forces, which are consistent with global equilibrium, thereby keeping the model size compact and computationally efficient. The 3NTS is integrated into standard non-linear solvers to simulate large-displacement response and validated against analytical solutions of two benchmark examples: the simplest 3NTS structure and the buckling of a vertical column. We further apply the framework to a reconfigurable truss structure from our previous work to illustrate potential functional use cases and outline its broader applicability to metamaterials, kirigami systems, and biomechanical assemblies. An open-source matrix structural analysis tool implementing the 3NTS and axial force members is made available with this note.”
-
-## Capabilities
-
-- Assemble hybrid bar–spring models with arbitrary connectivity by combining loaders in `structures/` with the 3NTS element (`core/springStiffness.m`).
-- Run multiple analyses from the same input data: eigenvalue checks, linear first-order, Euler incremental load steps, Newton–Raphson load control, and arc-length displacement control.
-- Track internal axial forces, spring rotations, and total energy to validate equilibrium, stability boundaries, and conservation of work.
-- Generate publication-ready plots (force–displacement, energy balance) and `.mp4` animations of structural deformation for each scenario.
-- Reproduce benchmark problems from the paper via the `validate*.m` scripts.
+- Builds hybrid bar-plus-3NTS models from structure loaders in `structures/`.
+- Assembles tangent stiffness and internal force contributions in `core/`.
+- Solves nonlinear response using multiple incremental-iterative schemes in `solver/`.
+- Produces deformation videos and force/energy plots from `post/`.
+- Includes benchmark and application scripts (`validate*.m`, `test*.m`).
 
 ## Repository layout
 
-| Path | Description |
+| Path | Purpose |
 |---|---|
-| `core/` | Element routines (axial stiffness, geometric stiffness, spring stiffness, DOF bookkeeping, global assembly). |
-| `solver/` | Analysis algorithms (`eigenValueAnalysis`, `elasticFirstOrder`, `eulerSolver`, `loadControlSolver`, `dispControlSolver`). |
-| `structures/` | Predefined problem definitions (`loadTestStructure`, `loadVertColumn`, `loadCantileverTruss`, etc.). Each returns a populated `params` struct. |
-| `post/` | Plotting helpers and drawing utilities used for videos/figures. |
-| `figures/`, `videos/` | Output folders created by the plotting routines. |
-| `validateTestStructure.m`, `validateVertCol.m` | Scripts that compare solver output against analytical benchmarks from the note. |
-| `variableReference.md` | Living glossary of every symbol used across the codebase. |
+| `core/` | Element and assembly routines (`barForceRec`, `globalStiffness`, `springStiffness`, enriched spring law helpers, DOF mapping). |
+| `solver/` | Nonlinear solution methods (`solverLCM`, `solverALCM`, `solverGDCM`, `solverAL_GDCM`, `solverDCM`). |
+| `structures/` | Problem definitions returning a standardized `params` struct. |
+| `post/` | Plotting and drawing helpers (`plotStructure`, `plotEnergy`, `plotForceDisp`). |
+| `videos/` | Rendered deformation videos (`.mp4`). |
+| `validateTestStructure.m`, `validateVertCol.m` | Validation scripts versus analytical references. |
+| `testSquareUnit.m`, `testShallowArch.m`, `testFourBarUnit.m`, `testStackedSquares.m` | Scenario scripts for mechanism-level studies. |
+| `variableReference.md` | Variable dictionary across loaders, core, solvers, and post-processing. |
 
 ## Requirements
 
-- MATLAB R2022b or newer (tested with R2024a). Earlier versions should work if they include `VideoWriter` and modern graphics.
-- No external toolboxes are required; only base MATLAB functions are used.
+- MATLAB R2022b or newer (tested with newer 2026-era scripts in this repository).
+- Base MATLAB only for core solver execution.
+- `sixBarLinkage.m` uses `fsolve` (`optimoptions`), so that script needs Optimization Toolbox.
 
-## Quick start
+## How to run
 
-1. Open MATLAB and `cd` into this repository.
-2. Execute `main`. The script adds all subfolders to the path, prompts for a structure (0–5), then prompts for an analysis type (0–4).
-3. After the solver finishes, review the console logs and generated plots/animations:
-   - Deformation video saved to `videos/StructuralDeformation<Structure>.mp4`.
-   - Energy balance and force–displacement figures shown in MATLAB (export steps are included in the plotting files if SVGs are desired).
+### Script-driven runs (recommended)
 
-### Available solvers (menu in `main.m`)
+Run one of the prepared scripts directly in MATLAB after `cd` into the repo:
 
-| Choice | Function | Purpose |
-|---|---|---|
-| `0` | `eigenValueAnalysis` | Linear eigenvalue extraction on the free DOF stiffness matrix for quick stability checks. |
-| `1` | `elasticFirstOrder` | Single-step linear elastic solution. |
-| `2` | `eulerSolver` | Incremental load-updating with Euler’s method. |
-| `3` | `loadControlSolver` | Newton–Raphson load control with tangent stiffness updates and residual monitoring. |
-| `4` | `dispControlSolver` | Arc-length (displacement-controlled) solver with optional automatic load-step sizing. |
+- `validateTestStructure`
+- `validateVertCol`
+- `testSquareUnit`
+- `testStackedSquares`
+- `testShallowArch`
+- `testFourBarUnit`
 
-### Predefined structures (menu in `main.m`)
+These scripts add paths (`core`, `solver`, `structures`, `post`) and call a solver explicitly.
 
-0. Test structure (single 3NTS + two bars)
-1. Vertical column (buckling benchmark)
-2. Cantilever truss
-3. Two-unit cantilever truss
-4. Shallow arch truss
-5. Warren truss
+### Interactive run (`main.m`)
 
-You can add more loaders following the pattern in `structures/load*.m`: supply `links`, `springs`, `coords`, boundary conditions, and material data, then call `barInfo`, `springInfo`, `numberDOF`, and `generateMapping` before returning the struct.
+`main.m` still provides structure/solver menus and post-processing in one flow.
 
-## Validation & reproducibility
+Current note: the menu text in `main.m` still references legacy solver names (`eigenValueAnalysis`, `elasticFirstOrder`, `eulerSolver`) that are not present in the current `solver/` folder. Active scripts in this repository use the newer solver files listed below.
 
-- `validateTestStructure.m` – runs the arc-length solver on the canonical 3NTS configuration and compares the numerical response with the analytical solution from the note.
-- `validateVertCol.m` – reproduces the vertical column buckling benchmark, overlaying analytical and numerical force–displacement curves.
+## Available solvers in `solver/`
 
-Both scripts add the necessary paths automatically; run them directly from MATLAB to regenerate the figures shown in the paper.
+| Function | Method summary |
+|---|---|
+| `solverLCM` | Load Control Method (Newton-Raphson style correction with fixed load stepping). |
+| `solverALCM` | Arc Length Control Method with predictor-corrector updates. |
+| `solverGDCM` | Generalized Displacement Control Method with adaptive generalized stiffness parameter scaling. |
+| `solverAL_GDCM` | Arc-length-like formulation with optional auto/fixed load stepping and stiffness-based scaling. |
+| `solverDCM` | Displacement Control Method variant (currently implemented but uses symbols/functions not present elsewhere in the repo; treat as experimental). |
 
-## Post-processing outputs
+## Available structure loaders
 
-- `plotStructure` – builds smooth animations of bar deformation, spring contraction/expansion, and applied force vectors. Videos render off-screen for repeatable exports.
-- `plotEnergy` – compares external work with the sum of bar and spring strain energies; reports max relative error to confirm energy balance.
-- `plotForceDisp` – draws load–displacement histories for any set of free DOFs; the validation scripts use this to overlay analytical curves.
+- `loadTestStructure`
+- `loadVertColumn`
+- `loadCantileverTruss`
+- `load2UnitCantileverTruss`
+- `loadShallowArch`
+- `loadWarrenTruss`
+- `loadSquareUnit`
+- `loadStackedSquaresSym`
+- `loadStackedSquaresAsym`
+- `loadColBars`
 
-## Customization tips
+All loaders return the same `params` fields (geometry, boundary conditions, material, indexing maps), so they are interchangeable across solvers.
 
-- Update or duplicate the loaders in `structures/` to explore new geometries. Since the solvers operate on the `params` struct, keeping field names consistent is all that is required.
-- The full list of parameters (including solver histories such as `delta`, `P`, `alpha`, `axialF`, and residuals) is documented in [`variableReference.md`](variableReference.md). Use it as a reference when adding new solvers, plotting routines, or exporting data.
-- Post-processing functions operate on the `results` struct returned by any solver, so custom scripts can create additional plots by accessing the same fields.
+## Spring constitutive behavior
 
-## Citing this work
+The 3NTS element in `core/springStiffness.m` computes the relative angle
 
-If you publish results that leverage this codebase, please cite the accompanying technical note on the 3NTS element. Include a pointer to this repository so other researchers can reproduce your simulations.
-> Patil, H. Y. and Filipov, E. T. (In press) Three-node torsional spring element formulation for the analysis of reconfigurable bar-linked structures. ASME Journal of Applied Mechanics
+`alpha = mod(atan2(S, C) + 2*pi, 2*pi)`
+
+and applies an enriched piecewise law (`core/enrichedSpringLaw.m`):
+
+- Linear response in the mid-range (`alpha1 <= alpha <= alpha2`).
+- Nonlinear tangent hardening near the lower/upper limits using `tan`/`sec^2` branches.
+- The tangent stiffness increases rapidly as `alpha` approaches `0` or `2*pi`.
+
+This behavior is also used in spring energy post-processing (`core/enrichedSpringEnergy.m`, `post/plotEnergy.m`).
+
+## Output products
+
+- Deformation video: `videos/StructuralDeformation<CaseName>.mp4`
+- Load-displacement figure: from `plotForceDisp`
+- Energy balance figure: from `plotEnergy`
+
+## Notes for extension
+
+- Add new structures by following any `structures/load*.m` template and preserving field names in the returned `params` struct.
+- Add new solvers by reusing `globalStiffness`, `partitionStiffness`, `barInfo`, `springInfo`, and the DOF mapping utilities.
+- Use `variableReference.md` as the source of truth for array dimensions and naming conventions.
+
+## Citation
+
+If you publish results based on this repository, cite the associated technical note:
+
+> Patil, H. Y., Filipov, E. T. Three-node torsional spring element formulation for the analysis of reconfigurable bar-linked structures. ASME Journal of Applied Mechanics (in press).
