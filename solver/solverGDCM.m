@@ -48,12 +48,12 @@ mapSprings = params.mapSprings;
 PRef = loadVector(force, reshapeIdx);
 
 % Initilize simulation parameters
-maxIncr = 700;
+maxIncr = 1000;
 maxIter = 50;
 minIter = 3;
 errTol = 1e-7;
 dirSign = 1;
-loadFactor = 0.005;
+loadFactor = 0.01;
 
 lambda = zeros(maxIter, maxIncr);
 dU = zeros(nNodes * nDof, maxIter, maxIncr);

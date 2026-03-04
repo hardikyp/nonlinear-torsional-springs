@@ -40,8 +40,8 @@ for inc = 2:(numSteps + 1)
     
     % Spring strain energy
     % springEnergy(1, inc) = 0.5 * kT' * (alpha(:, inc) - alpha0).^2; 
-    alpha1 = deg2rad(45); alpha2 = deg2rad(315);
-    Us_i = enrichedSpringEnergy(kT, alpha(:,inc), alpha0, alpha1, alpha2);
+    alpha1 = deg2rad(15); alpha2 = 2 * pi - alpha1; delta = deg2rad(10);
+    Us_i = enrichedSpringEnergy(kT, alpha(:,inc), alpha0, alpha1, alpha2, delta);
     springEnergy(1, inc) = sum(Us_i);
 
     % Bar strain energy    

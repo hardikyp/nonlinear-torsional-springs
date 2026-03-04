@@ -30,28 +30,44 @@
 % Es (vector): Spring strain energy per spring, evaluated at alpha.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function Es = enrichedSpringEnergy(k0, alpha, alpha0, alpha1, alpha2)
+function Es = enrichedSpringEnergy(k0, alpha, alpha0, alpha1, alpha2, delta)
+
+if ~(0 <= delta && delta < alpha1 && alpha1 < alpha2 && alpha2 < 2*pi-delta)
+    error('Require 0 <= delta < alpha1 < alpha2 < 2*pi-delta');
+end
+
+% Match spring law safeguard
+if delta > 0
+    epsA = 1e-12;
+    alpha = min(max(alpha, delta + epsA), 2*pi - delta - epsA);
+end
 
 if isscalar(alpha1), alpha1 = alpha1*ones(size(alpha)); end
 if isscalar(alpha2), alpha2 = alpha2*ones(size(alpha)); end
-if isscalar(k0),  k0  = k0 *ones(size(alpha)); end
+if isscalar(alpha0), alpha0 = alpha0*ones(size(alpha)); end
+if isscalar(k0),     k0     = k0    *ones(size(alpha)); end
 
 Es = zeros(size(alpha));
-L = alpha < alpha1;
-M = alpha >= alpha1 & alpha <= alpha2;
-R = alpha > alpha2;
-pl = pi./alpha1;
-pr = pi./(2*pi - alpha2);
+Lidx = alpha < alpha1;
+Midx = alpha >= alpha1 & alpha <= alpha2;
+Ridx = alpha > alpha2;
+
+% Updated to include delta (shifted asymptotes)
+pl = pi ./ (alpha1 - delta);
+pr = pi ./ ((2*pi - delta) - alpha2);
+
 % Left branch
-Es(L) = 0.5*k0(L).*(alpha0(L)-alpha1(L)).^2 + ...
-        k0(L).*(alpha0(L)-alpha1(L)).*(alpha1(L)-alpha(L)) - ...
-        4*k0(L)./pl(L).^2 .* log(abs(cos(pl(L)/2 .* (alpha1(L)-alpha(L)))));
+Es(Lidx) = 0.5*k0(Lidx).*(alpha0(Lidx)-alpha1(Lidx)).^2 + ...
+           k0(Lidx).*(alpha0(Lidx)-alpha1(Lidx)).*(alpha1(Lidx)-alpha(Lidx)) - ...
+           4*k0(Lidx)./pl(Lidx).^2 .* ...
+           log(abs(cos(pl(Lidx)/2 .* (alpha1(Lidx)-alpha(Lidx)))));
 
 % Middle branch
-Es(M) = 0.5*k0(M).*(alpha(M)-alpha0(M)).^2;
+Es(Midx) = 0.5*k0(Midx).*(alpha(Midx)-alpha0(Midx)).^2;
 
 % Right branch
-Es(R) = 0.5*k0(R).*(alpha2(R)-alpha0(R)).^2 + ...
-        k0(R).*(alpha2(R)-alpha0(R)).*(alpha(R)-alpha2(R)) - ...
-        4*k0(R)./pr(R).^2 .* log(abs(cos(pr(R)/2 .* (alpha(R)-alpha2(R)))));
+Es(Ridx) = 0.5*k0(Ridx).*(alpha2(Ridx)-alpha0(Ridx)).^2 + ...
+           k0(Ridx).*(alpha2(Ridx)-alpha0(Ridx)).*(alpha(Ridx)-alpha2(Ridx)) - ...
+           4*k0(Ridx)./pr(Ridx).^2 .* ...
+           log(abs(cos(pr(Ridx)/2 .* (alpha(Ridx)-alpha2(Ridx)))));
 end

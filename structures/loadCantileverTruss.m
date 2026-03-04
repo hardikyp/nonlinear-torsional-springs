@@ -47,7 +47,7 @@ E = [3000000;
 L0 = L;
 theta0 = theta;
 
-kT = [10];
+kT = [50];
 alpha0 = springInfo(coords, springs);
 
 [nNodes, nDof] = size(restraint);
@@ -56,6 +56,9 @@ nSpr = size(springs, 1);
 
 [identity, nFree, reshapeIdx] = numberDOF(restraint, nNodes, nDof);
 [mapBars, mapSprings] = generateMapping(identity, links, springs);
+
+idxCtrlU = controlDisplacement(1, 1, identity, nNodes, nDof, nFree);
+deltaU = 1.5;
 
 params = struct('links', links, ...
                 'springs', springs, ...
@@ -78,5 +81,7 @@ params = struct('links', links, ...
                 'nFree', nFree, ...
                 'reshapeIdx', reshapeIdx, ...
                 'mapBars', mapBars, ...
-                'mapSprings', mapSprings);
+                'mapSprings', mapSprings, ...
+                'idxCtrlU', idxCtrlU, ...
+                'deltaU', deltaU);
 end

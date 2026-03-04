@@ -47,7 +47,7 @@ mapSprings = params.mapSprings;
 PRef = loadVector(force, reshapeIdx);
 
 % Initilize simulation parameters
-maxIncr = 4500;
+maxIncr = 4000;
 maxIter = 50;
 minIter = 3;
 eta = 1;
@@ -148,6 +148,7 @@ for i = 1:maxIncr
     end
     
     % Store updated node locations and forces at the end of increment
+    % P(nFree:end, i+1) = intForce(nFree:end, i+1);
     nodeLoc(:, :, i + 1) = coords;
     nodeForce(:, :, i + 1) = reshape(P(reshapeIdx, i + 1), nDof, nNodes).';
 end

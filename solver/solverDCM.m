@@ -18,7 +18,7 @@
 %                     like forces, displacements, etc.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outParams] = solverDCM(params, ctrlUIdx)
+function [outParams] = solverDCM(params)
 % Unpack encapsulated input parameters
 links = params.links;
 springs = params.springs;
@@ -42,6 +42,8 @@ nFree = params.nFree;
 reshapeIdx = params.reshapeIdx;
 mapBars = params.mapBars;
 mapSprings = params.mapSprings;
+idxCtrlU = params.idxCtrlU;
+deltaU = params.deltaU;
 
 % System load vector to get PRef
 PRef = loadVector(force, reshapeIdx);
@@ -82,12 +84,12 @@ for i = 1:maxIncr
 
     while (err > errTol || j <= minIter) && (j <= maxIter)
         % Generate stiffness matrix
-        [kSystem, intF, axialF] = globalStiffnessNL(coords, coordsPrev, ...
-                                                    springs, nDof, nBars, ...
-                                                    nNodes, nSpr, A, E, L, ...
-                                                    L0, theta, kT, alpha0, ... 
-                                                    reshapeIdx, mapBars, ...
-                                                    mapSprings, axialF, i);
+        [kSystem, intF, axialF] = globalStiffness(coords, coordsPrev, ...
+                                                  springs, nDof, nBars, ...
+                                                  nNodes, nSpr, A, E, L, ...
+                                                  L0, theta, kT, alpha0, ... 
+                                                  reshapeIdx, mapBars, ...
+                                                  mapSprings, axialF, i);
         [Kff, Ksf] = partitionStiffness(kSystem, nFree);
 
         % Update internal member forces based on dDelta applied
@@ -97,19 +99,25 @@ for i = 1:maxIncr
 
         % Residual calculation
         if j > 1
-            R = P(1:nFree, i + 1) - intForce(1:nFree, 1);
+            R = P(1:nFree, i + 1) - intForce(1:nFree, i + 1);
         end
         dUR(:, j, i) = Kff \ R;
         dUP(:, j, i) = Kff \ PRef(1:nFree);
 
         % Load factor update
         if j == 1
-            lambda(j, i) = dirSign * arcLength / ...
-                           sqrt(dUP(:, j, i)' * dUP(:, j, i) + eta);
+            if i > 1
+                % Check for a change in the direction of loading
+                dUi_1 = U(1:nFree, i) - U(1:nFree, i-1);
+                if dot(dUi_1, dUP(:, j, i)) < 0
+                    dirSign = -1;
+                else
+                    dirSign = 1;
+                end
+            end
+            lambda(j, i) = dirSign * deltaU / dUP(idxCtrlU, j, i);
         else
-            lambda(j, i) = -(dU(1:nFree, 1, i)' * dUR(:, j, i)) / ...
-                            (dU(1:nFree, 1, i)' * dUP(:, j, i) + ...
-                             eta * lambda(1, i));
+            lambda(j, i) = -dUR(idxCtrlU, j, i) / dUP(idxCtrlU, j, i);
         end
 
         dU(1:nFree, j, i) = lambda(j, i) * dUP(:, j, i) + dUR(:, j, i);

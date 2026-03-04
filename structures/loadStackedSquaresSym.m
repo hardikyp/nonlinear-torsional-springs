@@ -38,12 +38,12 @@ coords = [0,       0;
 
 restraint = [1, 1;
              0, 0;
-             0, 0;
+             1, 0;
              0, 0;
              0, 0;
              1, 1;
              0, 0;
-             0, 0];
+             1, 0];
 
 force = [0, 0;
          0, 0;
@@ -94,6 +94,9 @@ nSpr = size(springs, 1);
 [identity, nFree, reshapeIdx] = numberDOF(restraint, nNodes, nDof);
 [mapBars, mapSprings] = generateMapping(identity, links, springs);
 
+idxCtrlU = controlDisplacement(3, 2, identity, nNodes, nDof, nFree);
+deltaU = 1.5;
+
 params = struct('links', links, ...
                 'springs', springs, ...
                 'coords', coords, ...
@@ -115,5 +118,7 @@ params = struct('links', links, ...
                 'nFree', nFree, ...
                 'reshapeIdx', reshapeIdx, ...
                 'mapBars', mapBars, ...
-                'mapSprings', mapSprings);
+                'mapSprings', mapSprings, ...
+                'idxCtrlU', idxCtrlU, ...
+                'deltaU', deltaU);
 end

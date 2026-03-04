@@ -17,7 +17,7 @@ addpath(genpath("structures"));
 
 % Load test structure
 disp("Loading square unit truss...");
-inputStructure = loadStackedSquaresAsym();
+inputStructure = loadStackedSquaresSym();
 inputStructureName = "StackedSquares";
 
 % Run displacement controlled analysis

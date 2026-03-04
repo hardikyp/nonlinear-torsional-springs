@@ -59,33 +59,29 @@ end
 
 % Require user input for what simulation type to run
 disp("\nSelect solver type:");
-disp("0. Eigenvalue analysis");
-disp("1. Elastic first order solver");
-disp("2. Euler's solver");
-disp("3. Load-controlled solver (Newton-Raphson)");
-disp("4. Displacement-controlled solver (Arc Length)");
-simType = input("Enter your choice (0, 1, 2, 3 or 4): ");
-while ~ismember(simType, [0, 1, 2, 3, 4])
-    disp("Invalid choice. Please enter 0, 1, 2, 3 or 4.");
-    simType = input("Enter your choice (0, 1, 2, 3 or 4): ");
+disp("0. Load control method");
+disp("1. Displacement control method");
+disp("2. Arc length control method");
+disp("3. Generalized displacement control method");
+simType = input("Enter your choice (0, 1, 2 or 3): ");
+while ~ismember(simType, [0, 1, 2, 3])
+    disp("Invalid choice. Please enter 0, 1, 2 or 3.");
+    simType = input("Enter your choice (0, 1, 2 or 3): ");
 end
 
 % Run simulation based on user input
 if simType == 0
-    disp("Running eigenvalue analysis...");
-    [results] = eigenValueAnalysis(inputStructure);
+    disp("Using load control method solver...");
+    [results] = solverLCM(inputStructure);
 elseif simType == 1
-    disp("Running elastic first order analysis...");
-    [results] = elasticFirstOrder(inputStructure);
-elseif simType == 2
-    disp("Running elastic second order analysis using Euler's algorithm...");
-    [results] = eulerSolver(inputStructure);
-elseif simType == 3
-    disp("Running elastic second order analysis using load-controlled algorithm (Newton-Raphson)...");
-    [results] = solverLCM(inputStructure);    
-elseif simType == 4
-    disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
+    disp("Using displacement control method solver...");
     [results] = solverDCM(inputStructure);
+elseif simType == 2
+    disp("Using arc length control method solver...");
+    [results] = solverALCM(inputStructure);
+elseif simType == 3
+    disp("Using generalized displacement control method solver...");
+    [results] = solverGDCM(inputStructure);
 end
 
 % Visualize the results of structural analysis
