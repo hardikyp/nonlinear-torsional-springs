@@ -23,6 +23,7 @@ nodeForce = params.nodeForce;
 force = params.force;
 L0 = params.L0;
 numSteps = params.numSteps;
+nNodes = params.nNodes;
 
 barThickness = 0.065 * mean(L0);   % height of rounded rectangle bar
 
@@ -33,6 +34,7 @@ if ~exist(outDir, 'dir'), mkdir(outDir); end
 videoFile = fullfile(outDir, "StructuralDeformation" + title + ".mp4");
 v = VideoWriter(videoFile, 'MPEG-4');
 v.FrameRate = 30;
+v.Quality = 100;
 open(v);
 % Figure/axes (off-screen, fixed size, OpenGL)
 fig = figure('Name','Structural deformation', 'NumberTitle','off', ...
@@ -89,7 +91,7 @@ for incr = 1:20:(numSteps + 1)
     end
 
     % -- Plot forces -- %
-    for n = 1:size(nodeLoc, 1)
+    for n = 1:nNodes
         if any(force(n, :))
             pos = nodeLoc(n, :, incr);
             frc = nodeForce(n, :, incr);

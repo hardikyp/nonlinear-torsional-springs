@@ -20,8 +20,8 @@ inputStructure = loadTestStructure();
 inputStructureName = "Test";
 
 % Run displacement controlled analysis
-disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
-[results] = solverDCM(inputStructure);
+disp("Running analysis...");
+[results] = solverAL_GDCM(inputStructure);
 
 % Visualize the results of structural analysis
 plotStructure(results, inputStructureName);

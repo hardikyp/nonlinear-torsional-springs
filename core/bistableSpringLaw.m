@@ -22,6 +22,5 @@
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 function [kT, M] = bistableSpringLaw(k0, alpha, alpha0, alpha1)
-delta = alpha - alpha0;
 
 end

@@ -19,12 +19,12 @@ disp("Loading shallow arch truss...");
 inputStructure = loadShallowArch();
 inputStructureName = "ShallowArch";
 
-% Run displacement controlled analysis
-disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
+% Run analysis
+disp("Running analysis...");
 % [results] = solverLCM(inputStructure);
 % [results] = solverDCM(inputStructure);
 % [results] = solverALCM(inputStructure);
-% [results] = solverGDCM(inputStructure);
+% [results] = solverMGDCM(inputStructure);
 [results] = solverAL_GDCM(inputStructure);
 
 % Visualize the results of structural analysis

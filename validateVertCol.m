@@ -19,10 +19,9 @@ disp("Loading vertical column structure...");
 inputStructure = loadVertColumn();
 inputStructureName = "VertCol";
 
-% Run displacement controlled analysis
-disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
-% [results] = solverDCM(inputStructure);
-[results] = solverALCM(inputStructure);
+% Run analysis
+disp("Running analysis...");
+[results] = solverAL_GDCM(inputStructure);
 
 % Visualize the results of structural analysis
 plotStructure(results, inputStructureName);

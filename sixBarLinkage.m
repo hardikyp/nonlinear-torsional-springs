@@ -32,8 +32,9 @@ options = optimoptions('fsolve', 'Display', 'none');  % Suppress output from fso
 PSol = fsolve(fun, initGuessE, options);
 E = [PSol(1), PSol(2)];
 pts = [A;E;B;D;C]
+
 % Stacked Asym
 pts1 = pts + [E]
 
 % Stacked sym
-pts2 = [-pts(:, 1), pts(:, 2)] + 
+pts2 = [-pts(:, 1), pts(:, 2)] + [pts(4, 1), 0] + E

@@ -19,8 +19,8 @@ disp("Loading square unit truss...");
 inputStructure = loadCantileverTruss();
 inputStructureName = "CantTruss";
 
-% Run displacement controlled analysis
-disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
+% Run analysis
+disp("Running analysis...");
 [results] = solverDCM(inputStructure);
 
 % Visualize the results of structural analysis

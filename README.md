@@ -1,108 +1,100 @@
-# Three-Node Torsional Spring (3NTS) Structural Analysis Toolkit
+# Nonlinear torsional springs
 
-This repository contains a MATLAB framework for 2D bar-linkage structural analysis with three-node torsional springs (3NTS). The implementation combines axial bar elements, geometric nonlinearity, and an enriched rotational spring law that stiffens near angle limits.
+This codebase implements nonlinear behavior into the three-node torsional spring (3NTS) developed in Patil and Filipov (2026).
+> Patil, H. Y., and Filipov, E. T. (2026). "Three-Node Torsional Spring Element Formulation for the Analysis of Reconfigurable Bar-Linked Structures." ASME. J. Appl. Mech. March 2026; 93(3): 034502. [https://doi.org/10.1115/1.4070821](https://doi.org/10.1115/1.4070821)
 
-## What the code does
+## Spring constitutive law for clamped spring behavior
 
-- Builds hybrid bar-plus-3NTS models from structure loaders in `structures/`.
-- Assembles tangent stiffness and internal force contributions in `core/`.
-- Solves nonlinear response using multiple incremental-iterative schemes in `solver/`.
-- Produces deformation videos and force/energy plots from `post/`.
-- Includes benchmark and application scripts (`validate*.m`, `test*.m`).
+Let
 
-## Repository layout
+- $\alpha \in [0,2\pi)$ — current spring angle  
+- $\alpha_0$ — reference (rest) angle  
+- $\alpha_1, \alpha_2$ — transition angles  
+- $K_T$ — baseline stiffness  
+- $\delta$ — inward shift of asymptotes  
 
-| Path | Purpose |
-|---|---|
-| `core/` | Element and assembly routines (`barForceRec`, `globalStiffness`, `springStiffness`, enriched spring law helpers, DOF mapping). |
-| `solver/` | Nonlinear solution methods (`solverLCM`, `solverALCM`, `solverGDCM`, `solverAL_GDCM`, `solverDCM`). |
-| `structures/` | Problem definitions returning a standardized `params` struct. |
-| `post/` | Plotting and drawing helpers (`plotStructure`, `plotEnergy`, `plotForceDisp`). |
-| `videos/` | Rendered deformation videos (`.mp4`). |
-| `validateTestStructure.m`, `validateVertCol.m` | Validation scripts versus analytical references. |
-| `testSquareUnit.m`, `testShallowArch.m`, `testFourBarUnit.m`, `testStackedSquares.m` | Scenario scripts for mechanism-level studies. |
-| `variableReference.md` | Variable dictionary across loaders, core, solvers, and post-processing. |
+with the admissible range $0 \le \delta < \alpha_1 < \alpha_2 < 2\pi-\delta$. If $\delta > 0$, the angle is clamped to $\alpha \in (\delta,\,2\pi-\delta)$
 
-## Requirements
+### Strain Energy
 
-- MATLAB R2022b or newer (tested with newer 2026-era scripts in this repository).
-- Base MATLAB only for core solver execution.
-- `sixBarLinkage.m` uses `fsolve` (`optimoptions`), so that script needs Optimization Toolbox.
+The strain energy $U(\alpha)$ satisfying $M=\frac{dU}{d\alpha}$ is
 
-## How to run
+$$
+U(\alpha)=
+\begin{cases}
 
-### Script-driven runs (recommended)
+\frac12 K_T(\alpha_0-\alpha_1)^2
++ K_T(\alpha_0-\alpha_1)(\alpha_1-\alpha)
+- \frac{4K_T(\alpha_1-\delta)^2}{\pi^2}
+\ln\!\left|\cos\!\left(\frac{\pi(\alpha_1-\alpha)}{2(\alpha_1-\delta)}\right)\right|,
 
-Run one of the prepared scripts directly in MATLAB after `cd` into the repo:
+& \alpha < \alpha_1
 
-- `validateTestStructure`
-- `validateVertCol`
-- `testSquareUnit`
-- `testStackedSquares`
-- `testShallowArch`
-- `testFourBarUnit`
+\\[24pt]
 
-These scripts add paths (`core`, `solver`, `structures`, `post`) and call a solver explicitly.
+\frac12 K_T(\alpha-\alpha_0)^2,
 
-### Interactive run (`main.m`)
+& \alpha_1 \le \alpha \le \alpha_2
 
-`main.m` still provides structure/solver menus and post-processing in one flow.
+\\[24pt]
 
-Current note: the menu text in `main.m` still references legacy solver names (`eigenValueAnalysis`, `elasticFirstOrder`, `eulerSolver`) that are not present in the current `solver/` folder. Active scripts in this repository use the newer solver files listed below.
+\frac12 K_T(\alpha_2-\alpha_0)^2
++ K_T(\alpha_2-\alpha_0)(\alpha-\alpha_2)
+- \frac{4K_T((2\pi-\delta)-\alpha_2)^2}{\pi^2}
+\ln\!\left|\cos\!\left(\frac{\pi(\alpha-\alpha_2)}{2((2\pi-\delta)-\alpha_2)}\right)\right|,
 
-## Available solvers in `solver/`
+& \alpha > \alpha_2
 
-| Function | Method summary |
-|---|---|
-| `solverLCM` | Load Control Method (Newton-Raphson style correction with fixed load stepping). |
-| `solverALCM` | Arc Length Control Method with predictor-corrector updates. |
-| `solverGDCM` | Generalized Displacement Control Method with adaptive generalized stiffness parameter scaling. |
-| `solverAL_GDCM` | Arc-length-like formulation with optional auto/fixed load stepping and stiffness-based scaling. |
-| `solverDCM` | Displacement Control Method variant (currently implemented but uses symbols/functions not present elsewhere in the repo; treat as experimental). |
+\end{cases}
+$$
 
-## Available structure loaders
+### Moment
 
-- `loadTestStructure`
-- `loadVertColumn`
-- `loadCantileverTruss`
-- `load2UnitCantileverTruss`
-- `loadShallowArch`
-- `loadWarrenTruss`
-- `loadSquareUnit`
-- `loadStackedSquaresSym`
-- `loadStackedSquaresAsym`
-- `loadColBars`
+The torsional moment $M(\alpha)$ is
+$$
+M(\alpha)=
+\begin{cases}
+K_T(\alpha_1-\alpha_0) + \dfrac{2K_T(\alpha_1-\delta)}{\pi}\tan\Bigg(\frac{\pi(\alpha-\alpha_1)}{2(\alpha_1-\delta)}\Bigg),
+& \alpha < \alpha_1
+\\[24pt]
 
-All loaders return the same `params` fields (geometry, boundary conditions, material, indexing maps), so they are interchangeable across solvers.
+K_T(\alpha-\alpha_0),
+& \alpha_1 \le \alpha \le \alpha_2
+\\[24pt]
 
-## Spring constitutive behavior
+K_T(\alpha_2-\alpha_0) + \dfrac{2K_T((2\pi-\delta)-\alpha_2)}{\pi}\tan\Bigg(\frac{\pi(\alpha-\alpha_2)}{2((2\pi-\delta)-\alpha_2)}\Bigg),
+& \alpha > \alpha_2
+\end{cases}
+$$
 
-The 3NTS element in `core/springStiffness.m` computes the relative angle
+### Value of tangent stiffness
 
-`alpha = mod(atan2(S, C) + 2*pi, 2*pi)`
+The tangent stiffness is
+$$
+K_T(\alpha) = \frac{dM}{d\alpha}
+$$
 
-and applies an enriched piecewise law (`core/enrichedSpringLaw.m`):
+$$
+K_T(\alpha)=
+\begin{cases}
+K_T\,\sec^2\Bigg(\frac{\pi(\alpha-\alpha_1)}{2(\alpha_1-\delta)}\Bigg),
+& \alpha < \alpha_1
+\\[24pt]
 
-- Linear response in the mid-range (`alpha1 <= alpha <= alpha2`).
-- Nonlinear tangent hardening near the lower/upper limits using `tan`/`sec^2` branches.
-- The tangent stiffness increases rapidly as `alpha` approaches `0` or `2*pi`.
+K_T,
+& \alpha_1 \le \alpha \le \alpha_2
+\\[24pt]
 
-This behavior is also used in spring energy post-processing (`core/enrichedSpringEnergy.m`, `post/plotEnergy.m`).
+K_T\,\sec^2\Bigg(\frac{\pi(\alpha-\alpha_2)}{2((2\pi-\delta)-\alpha_2)}\Bigg),
+& \alpha > \alpha_2
+\end{cases}
+$$
 
-## Output products
+### Asymptotic Behavior
 
-- Deformation video: `videos/StructuralDeformation<CaseName>.mp4`
-- Load-displacement figure: from `plotForceDisp`
-- Energy balance figure: from `plotEnergy`
+The nonlinear branches introduce barrier asymptotes:
 
-## Notes for extension
+- Left barrier at $\alpha \to \delta$
+- Right barrier at $\alpha \to 2\pi-\delta$
 
-- Add new structures by following any `structures/load*.m` template and preserving field names in the returned `params` struct.
-- Add new solvers by reusing `globalStiffness`, `partitionStiffness`, `barInfo`, `springInfo`, and the DOF mapping utilities.
-- Use `variableReference.md` as the source of truth for array dimensions and naming conventions.
-
-## Citation
-
-If you publish results based on this repository, cite the associated technical note:
-
-> Patil, H. Y., Filipov, E. T. Three-node torsional spring element formulation for the analysis of reconfigurable bar-linked structures. ASME Journal of Applied Mechanics (in press).
+Near these limits, $\tan(\xi) \to \pm\infty$. So $M(\alpha) \to \pm\infty$ and $K_T(\alpha) \to \infty$.

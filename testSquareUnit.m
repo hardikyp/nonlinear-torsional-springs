@@ -19,8 +19,8 @@ disp("Loading square unit truss...");
 inputStructure = loadSquareUnit();
 inputStructureName = "SquareUnit";
 
-% Run displacement controlled analysis
-disp("Running elastic second order analysis using displacement controlled algorithm (Arc-length)...");
+% Run analysis
+disp("Running analysis...");
 [results] = solverALCM(inputStructure);
 
 % Visualize the results of structural analysis
