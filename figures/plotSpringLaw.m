@@ -10,7 +10,7 @@ addpath(fullfile(repoRoot, 'core'));
 % Parameters
 k0 = 1;
 alpha0 = pi;
-delta = deg2rad(15);
+delta = deg2rad(20);
 alpha1 = deg2rad(45);
 alpha2 = 2*pi-alpha1;
 
@@ -50,7 +50,7 @@ ylabel('Moment');
 xlim([0 2*pi]);
 ylim([-5 5]);
 yticks([-5, 0, 5]);
-yticklabels({'-\infty', '', '+\infty'});
+yticklabels({'-\infty', '0', '+\infty'});
 
 nexttile;
 plot(alpha, kT, 'LineWidth', 2.5, 'Color', lineColor);
@@ -61,8 +61,8 @@ xlabel('\alpha (rad)');
 xlim([0 2*pi]);
 ylim([0, 5]);
 ylabel('Stiffness');
-yticks([0, 1, 2, 3, 4, 5]);
-yticklabels({'', 'k_T', '', '', '', '\infty'});
+yticks([0, 1, 5]);
+yticklabels({'0', 'k_T', '\infty'});
 
 sgtitle(sprintf(['k_0 = %.3g, \\alpha_0 = \\pi, \\delta = 10^\\circ, ', ...
     '\\alpha_1 = 15^\\circ, \\alpha_2 = 345^\\circ'], k0));
