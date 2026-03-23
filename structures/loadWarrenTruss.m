@@ -15,32 +15,32 @@ function [params] = loadWarrenTruss()
 links = [1, 2;
          1, 4;
          2, 3;
-         2, 5;
+         2, 6;
          3, 4;
          4, 5;
          4, 6;
          5, 7;
-         5, 9;
          6, 7;
+         6, 9;
          7, 8;
          7, 10;
          8, 9;
          9, 10];
 
 springs = [2, 3, 4;
-           4, 6, 7;
+           4, 5, 7;
            7, 8, 9];
 
-coords = [0, 0;
-          0.5, sin(pi/3);
-          0.75, 0.5 * sin(pi/3);
-          1, 0;
-          1.5, sin(pi/3);
-          1.5, 0;
-          2, 0;
-          2.25, 0.5*sin(pi/3);
-          2.5, sin(pi/3);
-          3, 0];
+coords = [0,      0;
+          1.0000, 1.0000;
+          1.2883, 0.7025;
+          2.0000, 0.0002;
+          3.0000, 0.0081;
+          3.0000, 1.0002;
+          3.9999, 0.0001;
+          4.2882, 0.2976;
+          5.0000, 1.0001;
+          5.9999, 0];
 
 restraint = [1, 1;
              0, 0;
@@ -55,14 +55,14 @@ restraint = [1, 1;
 
 force = [0, 0;
          0, 0;
-         0.1, 0;
          0, 0;
-         0, 1;
-         0, -0.1;
          0, 0;
-         -0.1, 0;
          0, 0;
-         0, 0];
+         0, 0;
+         0, 0;
+         0, 0;
+         0, 0;
+         -1000, 0];
 
 A = [0.5; 
      0.5;
@@ -79,28 +79,28 @@ A = [0.5;
      0.5;
      0.5];
 
-E = [3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000;
-     3000000];
+E = [3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000;
+     3000000000];
 
 [L, theta] = barInfo(coords, links);
 L0 = L;
 theta0 = theta;
 
-kT = [200;
-      200;
-      200];
+kT = [20;
+      20;
+      20];
 
 alpha0 = springInfo(coords, springs);
 
@@ -111,8 +111,8 @@ nSpr = size(springs, 1);
 [identity, nFree, reshapeIdx] = numberDOF(restraint, nNodes, nDof);
 [mapBars, mapSprings] = generateMapping(identity, links, springs);
 
-idxCtrlU = controlDisplacement(1, 1, identity, nNodes, nDof, nFree);
-deltaU = 1.5;
+idxCtrlU = controlDisplacement(5, 2, identity, nNodes, nDof, nFree);
+deltaU = 1;
 
 params = struct('links', links, ...
                 'springs', springs, ...

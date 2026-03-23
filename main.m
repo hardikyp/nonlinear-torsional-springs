@@ -78,7 +78,7 @@ elseif simType == 1
     [results] = solverDCM(inputStructure);
 elseif simType == 2
     disp("Using arc length control method solver...");
-    [results] = solverALCM(inputStructure);
+    [results] = solverALCM(inputStructure, 10000);
 elseif simType == 3
     disp("Using generalized displacement control method solver...");
     [results] = solverGDCM(inputStructure);

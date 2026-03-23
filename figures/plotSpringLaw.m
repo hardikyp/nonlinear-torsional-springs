@@ -32,21 +32,22 @@ tiledlayout(3, 1, 'TileSpacing', 'compact', 'Padding', 'compact');
 
 xticksVals = [alpha1, alpha0, alpha2];
 xtickLabels = {'\alpha_1', '\alpha_0', '\alpha_2'};
-lineColor = [0.12, 0.25, 0.70];
+lineColor = [192, 79, 21] / 255;
 
 nexttile;
 plot(alpha, Es, 'LineWidth', 2.5, 'Color', lineColor);
 formatAxes(gca, xticksVals, xtickLabels, [delta, 2*pi - delta]);
-ylabel('Energy');
+ylabel('Energy, U(\alpha)');
 xlim([0 2*pi]);
-title('Enriched Spring Response');
+title('Strain Energy');
 
 nexttile;
 plot(alpha, M, 'LineWidth', 2.5, 'Color', lineColor);
 hold on;
 yline(0, '--', 'Color', [0.5, 0.5, 0.5], 'LineWidth', 1.2);
 formatAxes(gca, xticksVals, xtickLabels, [delta, 2*pi - delta]);
-ylabel('Moment');
+ylabel('Moment, M(\alpha)');
+title('Restoring Moment');
 xlim([0 2*pi]);
 ylim([-5 5]);
 yticks([-5, 0, 5]);
@@ -60,12 +61,11 @@ formatAxes(gca, xticksVals, xtickLabels, [delta, 2*pi - delta]);
 xlabel('\alpha (rad)');
 xlim([0 2*pi]);
 ylim([0, 5]);
-ylabel('Stiffness');
+ylabel('Stiffness, kT(\alpha)');
+title('Spring Stiffness');
 yticks([0, 1, 5]);
 yticklabels({'0', 'k_T', '\infty'});
 
-sgtitle(sprintf(['k_0 = %.3g, \\alpha_0 = \\pi, \\delta = 10^\\circ, ', ...
-    '\\alpha_1 = 15^\\circ, \\alpha_2 = 345^\\circ'], k0));
 
 function formatAxes(ax, xticksVals, xtickLabels, xBounds)
 hold(ax, 'on');

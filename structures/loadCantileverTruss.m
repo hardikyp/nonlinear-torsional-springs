@@ -38,10 +38,10 @@ A = [0.5;
      0.5;
      0.5];
 
-E = [3000000;
-     3000000;
-     3000000;
-     3000000];
+E = [3000000000;
+     3000000000;
+     3000000000;
+     3000000000];
 
 [L, theta] = barInfo(coords, links);
 L0 = L;
@@ -57,8 +57,8 @@ nSpr = size(springs, 1);
 [identity, nFree, reshapeIdx] = numberDOF(restraint, nNodes, nDof);
 [mapBars, mapSprings] = generateMapping(identity, links, springs);
 
-idxCtrlU = controlDisplacement(1, 1, identity, nNodes, nDof, nFree);
-deltaU = 1.5;
+idxCtrlU = controlDisplacement(4, 1, identity, nNodes, nDof, nFree);
+deltaU = 1;
 
 params = struct('links', links, ...
                 'springs', springs, ...

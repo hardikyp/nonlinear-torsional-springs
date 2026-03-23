@@ -18,7 +18,7 @@
 %                     like forces, displacements, etc.
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-function [outParams] = solverALCM(params)
+function [outParams] = solverALCM(params, maxIncr)
 % Unpack encapsulated input parameters
 links = params.links;
 springs = params.springs;
@@ -47,7 +47,7 @@ mapSprings = params.mapSprings;
 PRef = loadVector(force, reshapeIdx);
 
 % Initilize simulation parameters
-maxIncr = 17000;
+% maxIncr = 2000;
 maxIter = 50;
 minIter = 3;
 eta = 1;

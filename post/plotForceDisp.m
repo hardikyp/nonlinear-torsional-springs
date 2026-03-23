@@ -32,8 +32,8 @@ set(gcf, ...
     'DefaultTextFontName', 'Arial', ...
     'DefaultAxesFontName', 'Arial', ...
     'DefaultLegendFontName', 'Arial', ...
-    'DefaultTextFontSize', 9, ...
-    'DefaultAxesFontSize', 9);
+    'DefaultTextFontSize', 12, ...
+    'DefaultAxesFontSize', 12);
 
 for k = 1:numel(dofList)
     idx = dofList(k);      % free DOF index
@@ -51,13 +51,13 @@ for k = 1:numel(dofList)
     end
     
     % Plot
-    plot(u, f, 'LineWidth', 2, 'Color', colors(k,:), ...
+    plot(u, f, 'LineWidth', 3, 'Color', colors(k,:), ...
          'DisplayName', sprintf('Node %d, %s', node, dofLabel));
 end
 legend('Location', 'best', 'EdgeColor', 'none', 'BackgroundAlpha', 0);
-xlabel('Displacement', 'FontName', 'Arial', 'FontSize', 9, 'FontWeight', 'normal');
-ylabel('Load', 'FontName', 'Arial', 'FontSize', 9, 'FontWeight', 'normal');
-title('Load–Displacement Curves', 'FontName', 'Arial', 'FontSize', 9, 'FontWeight', 'normal');
+xlabel('Displacement (m)', 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'normal');
+ylabel('Load (N)', 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'normal');
+title('Load–Displacement Curves', 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'normal');
 y = yline(0, 'k', 'DisplayName', '');
 x = xline(0, 'k', 'DisplayName', '');
 y.Annotation.LegendInformation.IconDisplayStyle = 'off';

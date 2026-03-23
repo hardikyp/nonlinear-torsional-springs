@@ -61,8 +61,8 @@ set(gcf, ...
     'DefaultTextFontName', 'Arial', ...
     'DefaultAxesFontName', 'Arial', ...
     'DefaultLegendFontName', 'Arial', ...
-    'DefaultTextFontSize', 9, ...
-    'DefaultAxesFontSize', 9);
+    'DefaultTextFontSize', 14, ...
+    'DefaultAxesFontSize', 14);
 
 % Stacked area for bar + spring energies
 colors = ["#ffa600", "#ff6361", "#bc5090"]; colororder(colors);
@@ -103,9 +103,9 @@ annotation('textbox', [textBoxX, textBoxY, textBoxWidth, textBoxHeight], ...
            'FaceAlpha', 0);
 xlim([0, numSteps]);
 grid on;
-xlabel('Load Increment', 'FontName', 'Arial', 'FontSize', 9, 'FontWeight', 'normal');
-ylabel('Energy',          'FontName', 'Arial', 'FontSize', 9, 'FontWeight', 'normal');
-title('Energy Balance Analysis', 'FontName', 'Arial', 'FontSize', 9, 'FontWeight', 'normal');
+xlabel('Load Increment', 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'normal');
+ylabel('Energy (Nm)',          'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'normal');
+title('Energy Balance Analysis', 'FontName', 'Arial', 'FontSize', 14, 'FontWeight', 'normal');
 
 % Export to svg
 % ax = gca;

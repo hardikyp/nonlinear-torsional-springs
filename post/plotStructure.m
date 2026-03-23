@@ -28,6 +28,7 @@ nNodes = params.nNodes;
 barThickness = 0.065 * mean(L0);   % height of rounded rectangle bar
 
 fprintf("PLOT: Structural deformation\n");
+
 % Video setup
 outDir = "videos";
 if ~exist(outDir, 'dir'), mkdir(outDir); end
@@ -36,22 +37,21 @@ v = VideoWriter(videoFile, 'MPEG-4');
 v.FrameRate = 30;
 v.Quality = 100;
 open(v);
+
 % Figure/axes (off-screen, fixed size, OpenGL)
-fig = figure('Name','Structural deformation', 'NumberTitle','off', ...
-             'Visible', 'on', 'Color','w', 'Units','pixels');
-ax = axes('Parent',fig);
+fig = figure('Name', 'Structural deformation', 'NumberTitle', 'off', ...
+    'Color', 'w', 'Units', 'pixels', 'Visible', 'on');
+ax = axes('Parent', fig);
 
 % Fixed limits (set once; no relayout in the loop)
 xMin = min(min(nodeLoc(:,1,:))) - 1;  xMax = max(max(nodeLoc(:,1,:))) + 1;
 yMin = min(min(nodeLoc(:,2,:))) - 1;  yMax = max(max(nodeLoc(:,2,:))) + 1;
-xlim(ax,[xMin xMax]); ylim(ax,[yMin yMax]);
-hold(ax,'on'); axis(ax,'equal'); axis(ax,'off');
+xlim(ax, [xMin xMax]); ylim(ax, [yMin yMax]);
+hold(ax, 'on'); axis(ax, 'equal'); axis(ax, 'off');
 
-for incr = 1:20:(numSteps + 1)
+for incr = 1:30:(numSteps + 1)
     cla(ax);
-    % axes(ax);
-    % hold(ax,'on'); axis(ax,'equal'); axis(ax,'off');
-    xlim(ax,[xMin xMax]); ylim(ax,[yMin yMax]);
+    xlim(ax, [xMin xMax]); ylim(ax, [yMin yMax]);
     
     % -- Plot bars -- %
     for bar = 1:size(links, 1)
@@ -99,19 +99,28 @@ for incr = 1:20:(numSteps + 1)
         end
     end
 
-    drawnow('limitrate','nocallbacks');
+    drawnow('limitrate', 'nocallbacks');
     
     % -- Write frame and clear for next frame -- %
+    % try
+    %     % frame = getframe(fig);
+    %     img = exportgraphics(fig, 'Resolution', 300);
+    %     frame = im2frame(img);
+    % catch
+    %     % Fallback for some headless configs
+    %     img = print(fig, '-RGBImage');
+    %     frame = im2frame(img);
+    % end
+    % writeVideo(v, frame);
     try
-        % frame = getframe(fig);
-        img = exportgraphics(fig, 'Resolution', 300);
-        frame = im2frame(img);
+        fr = getframe(fig);
+        rgb = fr.cdata;
     catch
-        % Fallback for some headless configs
-        img = print(fig, '-RGBImage');
-        frame = im2frame(img);
+        rgb = print(fig,'-RGBImage');      % returns MxNx3 on most setups
     end
-    writeVideo(v, frame);
+    if ndims(rgb)==2, rgb = repmat(rgb,1,1,3); end
+    if size(rgb,3)==4, rgb = rgb(:,:,1:3); end
+    writeVideo(v, rgb);
 end
 close(v);
 close(fig);

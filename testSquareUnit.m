@@ -21,14 +21,14 @@ inputStructureName = "SquareUnit";
 
 % Run analysis
 disp("Running analysis...");
-[results] = solverALCM(inputStructure);
+[results] = solverALCM(inputStructure, 6500);
 
 % Visualize the results of structural analysis
-plotStructure(results, inputStructureName);
+% plotStructure(results, inputStructureName);
     
 % Plot internal vs external energy
 plotEnergy(results);
 
 % Plot force vs displacement curve(s) with analytical solution
-plotForceDisp(results);
+plotForceDisp(results, results.identity([2 5], 2));
 disp("Analysis completed! All files saved.");

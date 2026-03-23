@@ -42,6 +42,8 @@ H = hessianAlpha(a, b, N, L1, L2);
 % Spring stiffening behaviour near spring's limit points
 alpha1 = deg2rad(15); alpha2 = 2 * pi - alpha1; delta = deg2rad(10);
 [kT, M] = enrichedSpringLaw(kT, alpha, alpha0, alpha1, alpha2, delta);
+% [kT, M] = bistableSpringLaw(kT, alpha, alpha0, alpha1, alpha2, delta);
+% M = kT * (alpha-alpha0);
 
 % Internal force vector and spring stiffness matrix
 intF = M * J;

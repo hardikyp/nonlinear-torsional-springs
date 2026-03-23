@@ -21,10 +21,11 @@ inputStructureName = "VertCol";
 
 % Run analysis
 disp("Running analysis...");
-[results] = solverAL_GDCM(inputStructure);
+% [results] = solverAL_GDCM(inputStructure);
+[results] = solverALCM(inputStructure, 6500);
 
 % Visualize the results of structural analysis
-plotStructure(results, inputStructureName);
+% plotStructure(results, inputStructureName);
 
 % Plot internal vs external energy
 plotEnergy(results);
@@ -40,7 +41,7 @@ K = 1000;
 P = [0 2*K/L*theta./sin(theta)];
 delta = [0 2*L*(1 - cos(theta))];
 hold on;
-plot(delta, P, '--k', 'DisplayName', 'Analytical', 'LineWidth', 3);
+plot(delta, P, '--k', 'DisplayName', 'Analytical', 'LineWidth', 1.5);
 ax = gca;
 xlim(ax, [0 2]);
 ylim(ax, [0 4000]);
@@ -52,4 +53,5 @@ dx = 0.4;  dy = 1000;
 xr = diff(xlim(ax));   yr = diff(ylim(ax));
 ratio = (dx * yr) / (dy * xr);   % Ly/Lx
 pbaspect(ax, [1 ratio 1]);
+legend("Location", "southeast");
 disp("Analysis completed! All files saved.");
